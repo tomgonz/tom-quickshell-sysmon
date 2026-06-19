@@ -17,6 +17,8 @@ A highly optimized, System Monitor Panel of widgets, Clock, Cpu, Memory, Network
 2. Clone or move these configuration files into your local directory:
    ```bash
    mkdir -p ~/.config/quickshell
+   cd ~/.config/quickshell
+   git clone https://github.com/tomgonz/tom-quickshell-sysmon  .
    # Move all files (shell.qml, Clock.qml, CpuGraph.qml, etc.) into this folder
    ```
 3. Run the dashboard using the quickshell daemon execution engine:
