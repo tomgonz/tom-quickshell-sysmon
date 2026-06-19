@@ -1,6 +1,6 @@
 # Tom's Quickshell System Monitor Panel
 
-A highly optimized, System Montitor Panel of widgets, Clock, Cpu, Memory, Netowrk, Disks, Volume,  zero-process-fork monitoring dashboard built for Linux desktop setups using `quickshell`. This widget cluster reads telemetry data directly from virtual kernel file systems (`/proc` and `/sys`), ensuring extremely low CPU usage and near-zero runtime latency.
+A highly optimized, System Monitor Panel of widgets, Clock, Cpu, Memory, Netowrk, Disks, Volume,  zero-process-fork monitoring dashboard built for Linux desktop setups using `quickshell`. This widget cluster reads telemetry data directly from virtual kernel file systems (`/proc` and `/sys`), ensuring extremely low CPU usage and near-zero runtime latency.
 
 ![Screenshot](tom-qs-sysmon.png) <!-- Add a nice screenshot here -->
 
