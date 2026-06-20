@@ -35,8 +35,8 @@ ShellRoot {
         // Hardware Thermal Configuration Controls
         // ==================================================================
         // run "sensors -j" to see all sensor data to choose your temp sensor
-        // AMD Defaults:  "k10temp-pci-00c3" and "Tctl"
-        // Intel Options: "coretemp-isa-0000" and "Package id 0"
+        // AMD Defaults:  "k10temp-pci-00c3" and "Tctl" and "temp1_input"
+        // Intel Options: "coretemp-isa-0000" and "Package id 0" and "temp1_input"
         property string cpuTempSensorChip:   "k10temp-pci-00c3"
         property string cpuTempSensorKey:    "Tctl"
         property string cpuTempSensorSubKey: "temp1_input"
@@ -248,6 +248,7 @@ ShellRoot {
                 Disk {
                     containerWidth: rootWindow.containerWidth
                     mountPoint: "/home"                // CHANGE THIS  *****
+                    mountDev: ""                       // or THIS *****
                     anchors.top: disk1Header.bottom
                     anchors.topMargin: 0
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -293,6 +294,7 @@ ShellRoot {
                 Disk {
                     containerWidth: rootWindow.containerWidth
                     mountPoint: "/backups"             // CHANGE THIS  *****
+                    mountDev: ""                       // or THIS *****
                     anchors.top: disk2Header.bottom
                     anchors.topMargin: 0
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -338,6 +340,7 @@ ShellRoot {
                 Disk {
                     containerWidth: rootWindow.containerWidth
                     mountPoint: "/timeshift"           // CHANGE THIS  *****
+                    mountDev: ""                       // or THIS *****
                     anchors.top: disk3Header.bottom
                     anchors.topMargin: 0
                     anchors.horizontalCenter: parent.horizontalCenter

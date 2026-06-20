@@ -12,6 +12,7 @@ Item {
     // ==================================================================
     required property real containerWidth
     required property string mountPoint
+    required property string mountDev
     
     // Core Sizing Rule: Ensure the root object bounds trace the Column children perfectly
     width: containerWidth
@@ -267,7 +268,7 @@ Item {
                 let cleanPath = data ? data.trim() : ""
                 if (cleanPath.length > 0 && cleanPath !== "Filesystem") {
                     root.devicePath = cleanPath
-                    root.deviceName = cleanPath.split("/").pop()
+                    root.deviceName = root.mountDev || cleanPath.split("/").pop()
                     
                     // Trigger immediate capacity parsing execution loop pass
                     spaceLookup.running = true
