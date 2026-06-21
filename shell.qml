@@ -1,4 +1,7 @@
 // shell.qml
+//
+// GPLv3 License
+//
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -30,6 +33,7 @@ ShellRoot {
         anchors.right: true
         margins.right: 4 
         margins.top: 4
+        property int widgetSpacing: 5
 
         // ==================================================================
         // Hardware Thermal Configuration Controls
@@ -87,7 +91,7 @@ ShellRoot {
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.margins: 1
-            spacing: 5
+            spacing: rootWindow.widgetSpacing
             
             // Scaler matrix applies uniformly to the complete sub-layout hierarchy
             transform: Scale {
