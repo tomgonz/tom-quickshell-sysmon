@@ -9,7 +9,9 @@ import Quickshell.Widgets
 import Quickshell.Io
 
 Item {
-    id: clockRoot
+    id: root
+
+    required property real containerWidth
 
     // Inherit the width passed down from shell.qml seamlessly
     width: parent ? parent.width : 220
@@ -42,8 +44,8 @@ Item {
             Text {
                 id: timeText
                 // Declarative binding updates automatically when currentTime changes
-                text: Qt.formatTime(clockRoot.currentTime, "hh:mm AP")
-                font.pixelSize: (clockRoot.width / 10) * 2
+                text: Qt.formatTime(root.currentTime, "hh:mm AP")
+                font.pixelSize: (root.width / 10) * 2
                 color: "white"
                 anchors.centerIn: parent
             }
@@ -58,7 +60,7 @@ Item {
                 show: textHover.hovered
                 // Dynamically calculates UTC tooltip text representation reactively
                 text: {
-                    let d = clockRoot.currentTime;
+                    let d = root.currentTime;
                     let hh = String(d.getUTCHours()).padStart(2, '0');
                     let mm = String(d.getUTCMinutes()).padStart(2, '0');
                     let ss = String(d.getUTCSeconds()).padStart(2, '0');
@@ -73,7 +75,7 @@ Item {
         // ------------------------------------------------------
         Rectangle {
             id: container
-            width: parent.width - 20
+            width: root.containerWidth - 10
             height: 2
             color: "black"
             anchors.horizontalCenter: parent.horizontalCenter
@@ -83,7 +85,7 @@ Item {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
                 // Maps 0-59 smooth width transitions cleanly
-                width: parent.width * (clockRoot.currentSecond / 59)
+                width: parent.width * (root.currentSecond / 59)
                 color: "white"
             }
         }
@@ -92,19 +94,20 @@ Item {
         // --- 3. Date Text Array (ddd + dd-MMM-yyyy) ---
         // -----------------------------------------------
         Row {
+            id: clockDate
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 0 
 
             Text {
-                text: Qt.formatDate(clockRoot.currentTime, "ddd ")
-                font.pixelSize: 22
+                text: Qt.formatDate(root.currentTime, "ddd ")
+                font.pixelSize: (root.width / 10)
                 color: "#FF3333"
                 style: Text.Outline
                 styleColor: "#22000000"
             }
             Text {
-                text: Qt.formatDate(clockRoot.currentTime, "  dd-MMM-yyyy")
-                font.pixelSize: 22
+                text: Qt.formatDate(root.currentTime, "  dd-MMM-yyyy")
+                font.pixelSize: (root.width / 10)
                 color: "#00BBFF"
                 style: Text.Outline
                 styleColor: "#22000000"
@@ -116,7 +119,7 @@ Item {
         // -------------------------------------------------
         Rectangle {
             id: dateBar
-            width: parent.width - 30
+            width: root.containerWidth - 30
             height: 1
             anchors.horizontalCenter: parent.horizontalCenter
             color: "#00FF77"
@@ -126,7 +129,8 @@ Item {
         // --- 5. System Uptime Label Display ---
         // -------------------------------------------------
         Text {
-            text: clockRoot.uptimeText
+            id: clockUptime
+            text: root.uptimeText
             font.pixelSize: 16
             color: "yellow"
             style: Text.Outline
@@ -152,8 +156,8 @@ Item {
        
         onTriggered: {
             // 1. Kick the core clock pulse binding chain
-            clockRoot.currentTime = new Date();
-            clockRoot.currentSecond = clockRoot.currentTime.getSeconds();
+            root.currentTime = new Date();
+            root.currentSecond = root.currentTime.getSeconds();
 
             // 2. High-performance, zero-fork Uptime Parsing Pass
             uptimeFile.reload();
@@ -169,7 +173,7 @@ Item {
                     if (days > 0) uptimeStr += `${days}d `;
                     uptimeStr += `${hours}h ${minutes}m`;
                 
-                    clockRoot.uptimeText = "Uptime: " + uptimeStr;
+                    root.uptimeText = "Uptime: " + uptimeStr;
                 }
             }
         }

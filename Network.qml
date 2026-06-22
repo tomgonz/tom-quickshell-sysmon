@@ -68,7 +68,7 @@ Item {
             Text {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Network " + root.interfaceName
+                text: "Net: " + root.interfaceName
                 color: "white"
                 font.pixelSize: 14
             }

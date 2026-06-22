@@ -110,13 +110,14 @@ ShellRoot {
             Rectangle {
                 id: clockWidget
                 width: parent.width
-                height: Math.floor(0.283 * rootWindow.mywidth + 61.8)
+                height: Math.floor(0.500 * rootWindow.mywidth + 15)
                 radius: rootWindow.widgetRadius
                 color: rootWindow.widgetBGcolor
                 border.color: rootWindow.widgetBorderColor
                 border.width: 2
 
                 Clock {
+                    containerWidth: rootWindow.containerWidth
                     width: parent.width
                     anchors.top: parent.top
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -129,13 +130,14 @@ ShellRoot {
 //            Rectangle {
 //                id: clockUTCWidget
 //                width: parent.width
-//                height: Math.floor(0.233 * rootWindow.mywidth + 49.8)
+//                height: Math.floor(0.400 * rootWindow.mywidth + 7)
 //                radius: rootWindow.widgetRadius
 //                color: rootWindow.widgetBGcolor
 //                border.color: rootWindow.widgetBorderColor
 //                border.width: 2
 //
 //                ClockUTC {
+//                    containerWidth: rootWindow.containerWidth
 //                    width: parent.width
 //                    anchors.top: parent.top
 //                    anchors.horizontalCenter: parent.horizontalCenter

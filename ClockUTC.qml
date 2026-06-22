@@ -11,6 +11,8 @@ import Quickshell.Io
 Item {
     id: utcRoot
 
+    required property real containerWidth
+
     // Inherit layout bounds passed downward from shell.qml safely
     width: parent ? parent.width : 220
     height: mainColumn.height
@@ -86,7 +88,7 @@ Item {
                     let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                     return days[utcRoot.currentTime.getUTCDay()] + " ";
                 }
-                font.pixelSize: 22
+                font.pixelSize: (utcRoot.width / 10)
                 color: "#FF3333"
                 style: Text.Outline
                 styleColor: "#22000000"
@@ -99,7 +101,7 @@ Item {
                     let yr = utcRoot.currentTime.getUTCFullYear();
                     return `  ${day}-${mon}-${yr}`;
                 }
-                font.pixelSize: 22
+                font.pixelSize: (utcRoot.width / 10)
                 color: "#00BBFF"
                 style: Text.Outline
                 styleColor: "#22000000"

@@ -46,7 +46,7 @@ Item {
             spacing: 4
             
             Text {
-                text: "Memory: " + root.memTotal.toFixed(1) + "G / "
+                text: "Mem: " + root.memTotal.toFixed(1) + "G / "
                 color: "white"
                 font.pixelSize: 13
             }
