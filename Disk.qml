@@ -13,7 +13,7 @@ Item {
     // ==================================================================
     // 1. User Tweakable Configurations & Variables
     // ==================================================================
-    required property real containerWidth
+    required property int containerWidth
     required property string mountPoint
     required property string mountDev
     
@@ -22,7 +22,7 @@ Item {
     height: mainColumn.height
 
     // Dynamic Sizing Metrics
-    property int historyLimit: Math.floor(containerWidth) - 2
+    property int historyLimit: containerWidth - 2
 
     property string devicePath: ""            // Will become "/dev/nvme1n1p3" dynamically
     property string deviceName: ""            // Will become "nvme1n1p3" dynamically
