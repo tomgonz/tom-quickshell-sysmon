@@ -22,8 +22,7 @@ A highly optimized, System Monitor Panel of widgets, Clock, Cpu, Memory, Network
 
 ## Installation & Deployment
 
-1. Make sure you have `quickshell` package installed on your system.  Either from your repo, or from: https://git.outfoxxed.me/quickshell/quickshell.git
-These System Monitor widgets were tested with Quickshell 0.2.1 from the Fedora repo.  Should work on the latest 0.3.0 from the GIT repo.
+1. Make sure you have `quickshell` package installed on your system.  Either from your repo, or from: https://git.outfoxxed.me/quickshell/quickshell.git  These System Monitor widgets were tested with Quickshell 0.2.1 from the Fedora repo.  Should work on the latest 0.3.0 from the GIT repo.
 2. Clone or move these configuration files into your local directory:
    ```bash
    mkdir -p ~/.config/quickshell
@@ -37,6 +36,7 @@ These System Monitor widgets were tested with Quickshell 0.2.1 from the Fedora r
    qs
    ```
 This will run the shell.qml file by default.
+
 5. Setup autostart at login.
    ```bash
    cp quickshell-panel.desktop  ~/.config/autostart/
