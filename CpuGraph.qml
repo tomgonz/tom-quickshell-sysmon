@@ -291,8 +291,8 @@ Item {
                     sysfsReader.path = "/sys/class/hwmon/hwmon" + root._scanHwmonIdx + "/name";
                     root._scanHwmonIdx++;
                 } else {
-                    // Total search failure fallback: route straight to universal ACPI zone
-                    root.resolvedTempPath = "/sys/class/thermal/thermal_zone0/temp";
+                    // Total search failure set to null so no temp shows
+                    root.resolvedTempPath = "/dev/null";
                     root._isInitialized = true;
                 }
                 return;
