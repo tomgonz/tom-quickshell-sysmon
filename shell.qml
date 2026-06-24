@@ -44,6 +44,8 @@ ShellRoot {
         // Quickshell will look for CPU temp in the /sys/class/hwmon/* with these strings.
         // AMD Defaults:  "k10temp-pci-00c3" and "Tctl"
         // Intel Options: "coretemp" and "Package id 0"
+        //property string cpuTempSensorChip:   "coretemp"
+        //property string cpuTempSensorKey:    "Package id 0"
         property string cpuTempSensorChip:   "k10temp"
         property string cpuTempSensorKey:    "Tctl"
 
