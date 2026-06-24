@@ -289,7 +289,10 @@ Item {
         path: "/sys/class/net/" + root.interfaceName + "/statistics/tx_bytes"
     }
 
-    // Isolated tracking object blocks variable data leaks
+    
+    // ==================================================================
+    // Iteration Timing loops
+    // ==================================================================
     property var _trackerState: ({ lastRx: 0, lastTx: 0, initialized: false })
 
     Timer {
