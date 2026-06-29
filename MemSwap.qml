@@ -6,17 +6,19 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-Item {
+Rectangle {
     id: root
 
     // ==================================================================
     // 1. User Tweakable Configurations & Variables
     // ==================================================================
     required property real containerWidth
-    
-    // Core Sizing Rule: Let height dynamically bound itself to follow child footprints exactly
-    width: containerWidth 
-    height: mainColumn.height
+
+    height: mainColumn.height + 8
+    radius: rootWindow.widgetRadius
+    color: rootWindow.widgetBGcolor
+    border.color: rootWindow.widgetBorderColor
+    border.width: 2
 
     property real memTotal: 0
     property real memUsed: 0
@@ -24,7 +26,7 @@ Item {
     property real swapTotal: 0
     property real swapUsed: 0
     property real swapPerUsed: 0
-    
+
     property var memHistory: []
     property int maxHistoryPoints: Math.floor(containerWidth) - 2
 
@@ -33,7 +35,7 @@ Item {
     // ==================================================================
     Column {
         id: mainColumn
-        width: parent.width
+        width: root.containerWidth
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: 2
 
@@ -44,7 +46,7 @@ Item {
             width: parent.width
             height: 18 // Tightened height bounds to sit safely inside your 116px container limit
             spacing: 4
-            
+
             Text {
                 text: "Mem: " + root.formatSize(root.memTotal) + " / "
                 color: "white"
@@ -100,20 +102,20 @@ Item {
                     let lastX = width - ((root.memHistory.length - 1) * step);
                     ctx.lineTo(lastX, height);
                     ctx.closePath();
-                    
+
                     ctx.fill();
                     ctx.stroke();
                 }
             }   
         }
-        
+
         // ---------------------------
         // --- 3. Memory Text Readout ---
         // ---------------------------
         Item {
             width: parent.width
             height: 14
-            
+
             Text {
                 anchors.left: parent.left
                 anchors.top: parent.top
@@ -147,7 +149,7 @@ Item {
                     anchors.margins: 1
                     width: (root.swapTotal > 0) ? Math.max(0, (parent.width - 2) * (root.swapUsed / root.swapTotal)) : 0
                     color: "#FF3333"
-                    
+
                     Behavior on width { NumberAnimation { duration: 250 } }
                 }
             }
@@ -187,7 +189,7 @@ Item {
     FileView {
         id: memInfoReader
         path: "/proc/meminfo"
-        
+
         onLoaded: {
             let content = (typeof text === "function") ? text() : text;
             if (!content) return;

@@ -6,15 +6,19 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-Item {
+Rectangle {
     id: root
 
     // ==================================================================
     // 1. User Tweakable Configurations & Variables
     // ==================================================================
     required property real containerWidth
-    width: containerWidth
-    height: mainColumn.height // Dynamic bounding follows footprint exactly
+
+    height: mainColumn.height + 6
+    radius: rootWindow.widgetRadius
+    color: rootWindow.widgetBGcolor
+    border.color: rootWindow.widgetBorderColor
+    border.width: 2
 
     // --- Configuration Inputs ---
     property string interfaceName: rootWindow.netDev
@@ -53,9 +57,15 @@ Item {
     // ==================================================================
     Column {
         id: mainColumn
-        width: parent.width
+        width: root.containerWidth
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: 1
+
+        // Spacer
+        Item {
+            width: 1
+            height: 2
+        }
 
         // ---------------------------
         // --- 1. Network dev & IP Header (Standard Left/Right Positioner) ---
@@ -83,8 +93,8 @@ Item {
 
         // Spacer
         Item {
-           width: 1
-           height: 3
+            width: 1
+            height: 3
         }
 
         // ---------------------------
@@ -127,6 +137,7 @@ Item {
                 id: upCanvas
                 anchors.fill: parent
                 anchors.margins: 1
+
                 Connections {
                     target: root
                     function onHistoryUpChanged() { upCanvas.requestPaint() }
@@ -135,27 +146,43 @@ Item {
                 onPaint: {
                     let ctx = getContext("2d")
                     ctx.reset()
-                    if (root.historyUp.length < 2) return
+
+                    // PERFORMANCE: Cache properties locally to prevent C++/JS engine overhead
+                    let data = root.historyUp
+                    let len = data.length
+                    let maxVal = root.netUpMax
+                    let limit = root.historyLimit
+
+                    // ROBUSTNESS: Prevent crashes, NaN layout bugs, and division-by-zero
+                    if (len < 2 || maxVal <= 0 || limit <= 1) return
 
                     ctx.fillStyle = "#00BBFF"
                     ctx.strokeStyle = "#00BBFF"
                     ctx.lineWidth = 1
                     ctx.beginPath()
+
+                    // Baseline for Normal Upward graph is Y = height (bottom)
                     ctx.moveTo(width, height)
 
-                    let step = width / (root.historyLimit - 1)
-                    for (let i = 0; i < root.historyUp.length; i++) {
-                        let dataIndex = root.historyUp.length - 1 - i
+                    let step = width / (limit - 1)
+
+                    for (let i = 0; i < len; i++) {
+                        let idx = len - 1 - i
                         let x = width - (i * step)
-                        let ratio = root.historyUp[dataIndex] / root.netUpMax
-                        let y = height - (ratio * height)
+
+                        // Normal Upward Math: 
+                        // 0 value results in y = height (physical bottom)
+                        // max value results in y = 0 (physical top)
+                        let y = height - ((data[idx] / maxVal) * height)
+
                         ctx.lineTo(x, y)
                     }
 
-                    let lastX = width - ((root.historyUp.length - 1) * step)
+                    // Close the path clean along the bottom baseline (Y = height)
+                    let lastX = width - ((len - 1) * step)
                     ctx.lineTo(lastX, height)
                     ctx.closePath()
-                    
+
                     ctx.fill()
                     ctx.stroke()
                 }
@@ -182,7 +209,7 @@ Item {
             color: "#66000000"
             border.color: "#AA000000"
             border.width: 1
-            
+
             // Flushes the top edge of this container directly under your sepBar line
             anchors.topMargin: -1 
 
@@ -190,11 +217,9 @@ Item {
                 id: downCanvas
                 anchors.fill: parent
                 anchors.margins: 1
-                
-                transform: [
-                    Scale { yScale: -1 },
-                    Translate { y: downCanvas.height }
-                ]
+
+                // Removed the old QML transform block. 
+                // Handling the inversion in pure math runs significantly faster.
 
                 Connections {
                     target: root
@@ -204,27 +229,43 @@ Item {
                 onPaint: {
                     let ctx = getContext("2d")
                     ctx.reset()
-                    if (root.historyDown.length < 2) return
+
+                    // PERFORMANCE: Cache properties locally to prevent engine cross-boundary lag
+                    let data = root.historyDown
+                    let len = data.length
+                    let maxVal = root.netDownMax
+                    let limit = root.historyLimit
+
+                    // ROBUSTNESS: Safeguard against empty data, negative values, or zero division
+                    if (len < 2 || maxVal <= 0 || limit <= 1) return
 
                     ctx.fillStyle = "#ff3333"
                     ctx.strokeStyle = "#ff3333"
                     ctx.lineWidth = 1
                     ctx.beginPath()
-                    ctx.moveTo(width, height)
 
-                    let step = width / (root.historyLimit - 1)
-                    for (let i = 0; i < root.historyDown.length; i++) {
-                        let dataIndex = root.historyDown.length - 1 - i
+                    // 0 is at the top in flipped mode, so our fill baseline is Y = 0
+                    ctx.moveTo(width, 0)
+
+                    let step = width / (limit - 1)
+
+                    for (let i = 0; i < len; i++) {
+                        let idx = len - 1 - i
                         let x = width - (i * step)
-                        let ratio = root.historyDown[dataIndex] / root.netDownMax
-                        let y = height - (ratio * height)
+
+                        // EFFICIENT MATH FLIP: 
+                        // 0 value results in y = 0 (physical top)
+                        // max value results in y = height (physical bottom)
+                        let y = (data[idx] / maxVal) * height
+
                         ctx.lineTo(x, y)
                     }
 
-                    let lastX = width - ((root.historyDown.length - 1) * step)
-                    ctx.lineTo(lastX, height)
+                    // Close the path clean along the top baseline (Y = 0)
+                    let lastX = width - ((len - 1) * step)
+                    ctx.lineTo(lastX, 0)
                     ctx.closePath()
-                    
+
                     ctx.fill()
                     ctx.stroke()
                 }
@@ -264,15 +305,20 @@ Item {
     // Dynamic IP address node evaluation channel
     Process {
         id: ipLookup
-        command: ["sh", "-c", "ip -o -4 addr show '" + root.interfaceName + "' | awk '/ inet / {split($4, a, \"/\"); print a[1]}'"]
-        running: true
+        // Natively invoke ip route targets directly without wrapping extra sh or awk interpreters
+        command: root.interfaceName ? ["ip", "-o", "-4", "addr", "show", "dev", root.interfaceName] : []
+        running: root.interfaceName !== ""
 
-        stdout: SplitParser {
-            onRead: data => {
-                let outText = data ? data.trim() : ""
-                if (outText.length > 0) {
-                    root.netIP = outText
-                    ipLookup.running = false // Terminate tool pass instantly to release memory
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let rawText = text ? text.trim() : "";
+                if (!rawText) return;
+
+                // Robust JS Parsing: Match standard IPv4 token string structures
+                let match = rawText.match(/inet\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
+                if (match && match[1]) {
+                    root.netIP = match[1];
+                    ipLookup.running = false; // Terminate tool pass instantly to release memory
                 }
             }
         }
@@ -289,7 +335,6 @@ Item {
         path: "/sys/class/net/" + root.interfaceName + "/statistics/tx_bytes"
     }
 
-    
     // ==================================================================
     // Iteration Timing loops
     // ==================================================================
@@ -305,11 +350,13 @@ Item {
             rxFile.reload()
             txFile.reload()
 
-            let rxRaw = (typeof rxFile.text === "function") ? rxFile.text() : rxFile.text
-            let txRaw = (typeof txFile.text === "function") ? txFile.text() : txFile.text
+            // 1. PERFORMANCE: Directly grab and trim text via standard functional lookups
+            let rxRaw = rxFile.text().trim()
+            let txRaw = txFile.text().trim()
 
-            let currentRx = parseInt(rxRaw ? rxRaw.trim() : "0") || 0
-            let currentTx = parseInt(txRaw ? txRaw.trim() : "0") || 0
+            // 2. RADIX SAFETY: Always parse numeric values with a clear radix 10 baseline
+            let currentRx = parseInt(rxRaw || "0", 10) || 0
+            let currentTx = parseInt(txRaw || "0", 10) || 0
             let state = root._trackerState
 
             if (currentRx === 0 || currentTx === 0) return
@@ -332,20 +379,32 @@ Item {
             root._netDownBitsSec = deltaRx * 8
             root._netUpBitsSec = deltaTx * 8
 
-            let upHist = [...root.historyUp]
-            let downHist = [...root.historyDown]
+            // 3. OPTIMIZATION: Use high-efficiency slice copies instead of array spreads
+            let upHist = root.historyUp.slice()
+            let downHist = root.historyDown.slice()
 
             upHist.push(root._netUpBitsSec)
             downHist.push(root._netDownBitsSec)
 
-            if (upHist.length > root.historyLimit) upHist.shift()
-            if (downHist.length > root.historyLimit) downHist.shift()
+            let limit = root.historyLimit
+            if (upHist.length > limit) upHist.shift()
+            if (downHist.length > limit) downHist.shift()
 
             root.historyUp = upHist
             root.historyDown = downHist
 
-            root._netUpMax = Math.max(...upHist, 1)
-            root._netDownMax = Math.max(...downHist, 1)
+            // 4. STABILITY FIX: Fast, crash-proof manual loops protect against stack overflows
+            let maxUp = 1
+            for (let u = 0; u < upHist.length; u++) {
+                if (upHist[u] > maxUp) maxUp = upHist[u]
+            }
+            root._netUpMax = maxUp
+
+            let maxDown = 1
+            for (let d = 0; d < downHist.length; d++) {
+                if (downHist[d] > maxDown) maxDown = downHist[d]
+            }
+            root._netDownMax = maxDown
 
             state.lastRx = currentRx
             state.lastTx = currentTx

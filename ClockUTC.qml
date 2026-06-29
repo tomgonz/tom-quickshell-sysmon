@@ -8,14 +8,19 @@ import Quickshell
 import Quickshell.Widgets
 import Quickshell.Io
 
-Item {
+Rectangle {
     id: utcRoot
 
     required property real containerWidth
 
-    // Inherit layout bounds passed downward from shell.qml safely
-    width: parent ? parent.width : 220
-    height: mainColumn.height
+    height: Math.floor(0.400 * rootWindow.mywidth + 7)
+    //height: mainColumn.height + 8
+    radius: rootWindow.widgetRadius
+    color: rootWindow.widgetBGcolor
+    border.color: rootWindow.widgetBorderColor
+    border.width: 2
+
+    // width: parent ? parent.width : 220
 
     // --- Dynamic Time Tracking States ---
     property var currentTime: new Date()
@@ -60,11 +65,11 @@ Item {
         // ------------------------------------------------------
         Rectangle {
             id: container
-            width: parent.width - 20
+            width: rootWindow.mywidth - 40
             height: 2
             color: "black"
             anchors.horizontalCenter: parent.horizontalCenter
-    
+
             Rectangle {
                 anchors.left: parent.left
                 anchors.top: parent.top
@@ -117,7 +122,7 @@ Item {
         running: true
         repeat: true
         triggeredOnStart: true
-       
+
         onTriggered: {
             // Kick the layout loop to evaluate all UTC binding elements simultaneously
             utcRoot.currentTime = new Date();

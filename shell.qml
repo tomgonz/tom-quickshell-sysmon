@@ -75,7 +75,7 @@ ShellRoot {
         mask: Region { 
             item: clockWidget
             Region { item: clockWidget }
-//            Region { item: clockUTCWidget }     // uncomment when adding UTC
+            Region { item: clockUTCWidget }     // uncomment when adding UTC
             Region { item: cpuWidget }
             Region { item: memoryWidget }
             Region { item: networkWidget }
@@ -96,7 +96,7 @@ ShellRoot {
             anchors.top: parent.top
             anchors.margins: 1
             spacing: rootWindow.widgetSpacing
-            
+
             // Scaler matrix applies uniformly to the complete sub-layout hierarchy
             transform: Scale {
                 origin.x: 0
@@ -108,205 +108,103 @@ ShellRoot {
             // ----------------------------------
             // Clock Widget
             // ----------------------------------
-            Rectangle {
+            Clock {
                 id: clockWidget
+                containerWidth: rootWindow.containerWidth
                 width: parent.width
-                height: Math.floor(0.500 * rootWindow.mywidth + 15)
-                radius: rootWindow.widgetRadius
-                color: rootWindow.widgetBGcolor
-                border.color: rootWindow.widgetBorderColor
-                border.width: 2
-
-                Clock {
-                    containerWidth: rootWindow.containerWidth
-                    width: parent.width
-                    anchors.top: parent.top
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
             }
 
             // ----------------------------------
             // Clock UTC widget  (uncomment to add UTC clock)
             // ----------------------------------
-//            Rectangle {
-//                id: clockUTCWidget
-//                width: parent.width
-//                height: Math.floor(0.400 * rootWindow.mywidth + 7)
-//                radius: rootWindow.widgetRadius
-//                color: rootWindow.widgetBGcolor
-//                border.color: rootWindow.widgetBorderColor
-//                border.width: 2
-//
-//                ClockUTC {
-//                    containerWidth: rootWindow.containerWidth
-//                    width: parent.width
-//                    anchors.top: parent.top
-//                    anchors.horizontalCenter: parent.horizontalCenter
-//                }
-//            }
+            ClockUTC {
+                id: clockUTCWidget
+                containerWidth: rootWindow.containerWidth
+                width: parent.width
+            }
 
             // ----------------------------------
             // CPU Widget
             // ----------------------------------
-            Rectangle {
+            CpuGraph {
                 id: cpuWidget
+
+                containerWidth: rootWindow.containerWidth
+                sensorChipName: rootWindow.cpuTempSensorChip
+                sensorKeyName:  rootWindow.cpuTempSensorKey
+
                 width: parent.width
-                height: 142
-                radius: rootWindow.widgetRadius
-                color: rootWindow.widgetBGcolor
-                border.color: rootWindow.widgetBorderColor
-                border.width: 2
-
-                Column {
-                    id: cpuColumn
-                    anchors.top: parent.top
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.topMargin: 3
-                    spacing: 5
-
-                    CpuGraph {
-                        containerWidth: rootWindow.containerWidth
-                        sensorChipName: rootWindow.cpuTempSensorChip
-                        sensorKeyName:  rootWindow.cpuTempSensorKey
-                    }
-
-                    CpuBars {
-                        containerWidth: rootWindow.containerWidth
-                    }
-                }
             }
+
 
             // ----------------------------------
             // MemSwap Widget
             // ----------------------------------
-            Rectangle {
+            MemSwap {
                 id: memoryWidget
+                containerWidth: rootWindow.containerWidth
                 width: parent.width
-                height: 116
-                radius: rootWindow.widgetRadius
-                color: rootWindow.widgetBGcolor
-                border.color: rootWindow.widgetBorderColor
-                border.width: 2
-
-                MemSwap {
-                    containerWidth: rootWindow.containerWidth
-                    anchors.top: parent.top
-                    anchors.topMargin: 3
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
             }
 
             // ----------------------------------
             // Network Widget
             // ----------------------------------
-            Rectangle {
+            Network {
                 id: networkWidget
+                containerWidth: rootWindow.containerWidth
                 width: parent.width
-                height: 134
-                radius: rootWindow.widgetRadius
-                color: rootWindow.widgetBGcolor
-                border.color: rootWindow.widgetBorderColor
-                border.width: 2
-
-                Network {
-                    containerWidth: rootWindow.containerWidth
-                    anchors.top: parent.top
-                    anchors.topMargin: 3
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
             }
 
 
             // ----------------------------------
             // Disk widget 1
             // ----------------------------------
-            Rectangle {
-                id: diskWidget1                      // CHANGE THIS  *****
+            Disk {
+                id: diskWidget1                    // CHANGE THIS  *****
+
+                modelSize: "SSD M.2 4.0T"          // CHANGE THIS  *****
+                mountPoint: "/home"                // CHANGE THIS  *****
+                mountDev: ""                       // leave this blank, unless needed *****
+                containerWidth: rootWindow.containerWidth
+
                 width: parent.width
-                height: 142
-                radius: rootWindow.widgetRadius
-                color: rootWindow.widgetBGcolor
-                border.color: rootWindow.widgetBorderColor
-                border.width: 2
-
-                Disk {
-                    modelSize: "SSD M.2 4.0T"          // CHANGE THIS  *****
-                    mountPoint: "/home"                // CHANGE THIS  *****
-                    mountDev: ""                       // leave this blank, unless needed *****
-                    containerWidth: rootWindow.containerWidth
-
-                    anchors.top: parent.top
-                    anchors.topMargin: 0
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
             }
 
             // ----------------------------------
             // Disk widget 2
             // ----------------------------------
-            Rectangle {
-                id: diskWidget2                      // CHANGE THIS  *****
+            Disk {
+                id: diskWidget2                    // CHANGE THIS  *****
+
+                modelSize: "Disk USB 4.0T"         // CHANGE THIS  *****
+                mountPoint: "/backups"             // CHANGE THIS  *****
+                mountDev: ""                       // leave this blank, unless needed *****
+                containerWidth: rootWindow.containerWidth
+
                 width: parent.width
-                height: 142
-                radius: rootWindow.widgetRadius
-                color: rootWindow.widgetBGcolor
-                border.color: rootWindow.widgetBorderColor
-                border.width: 2
-
-                Disk {
-                    modelSize: "Disk USB 4.0T"         // CHANGE THIS  *****
-                    mountPoint: "/backups"             // CHANGE THIS  *****
-                    mountDev: ""                       // leave this blank, unless needed *****
-                    containerWidth: rootWindow.containerWidth
-
-                    anchors.top: parent.top
-                    anchors.topMargin: 0
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
             }
 
             // ----------------------------------
             // Disk widget 3
             // ----------------------------------
-            Rectangle {
-                id: diskWidget3                      // CHANGE THIS  *****
+            Disk {
+                id: diskWidget3                    // CHANGE THIS  *****
+
+                modelSize: "SSD PCIe 1.6T"         // CHANGE THIS  *****
+                mountPoint: "/timeshift"           // CHANGE THIS  *****
+                mountDev: ""                       // leave this blank, unless needed *****
+                containerWidth: rootWindow.containerWidth
+
                 width: parent.width
-                height: 142
-                radius: rootWindow.widgetRadius
-                color: rootWindow.widgetBGcolor
-                border.color: rootWindow.widgetBorderColor
-                border.width: 2
-
-                Disk {
-                    modelSize: "SSD PCIe 1.6T"         // CHANGE THIS  *****
-                    mountPoint: "/timeshift"           // CHANGE THIS  *****
-                    mountDev: ""                       // leave this blank, unless needed *****
-                    containerWidth: rootWindow.containerWidth
-
-                    anchors.top: parent.top
-                    anchors.topMargin: 0
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
             }
 
             // ----------------------------------
             // Volume widget
             // ----------------------------------
-            Rectangle {
+            Volume {
                 id: volumeWidget
+                containerWidth: rootWindow.containerWidth
                 width: parent.width
-                height: 50
-                radius: rootWindow.widgetRadius
-                color: rootWindow.widgetBGcolor
-                border.color: rootWindow.widgetBorderColor
-                border.width: 2
-
-                Volume {
-                    containerWidth: rootWindow.containerWidth
-                    anchors.top: parent.top
-                    anchors.topMargin: 5
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
             }
 
         } // End of master widgetColumn

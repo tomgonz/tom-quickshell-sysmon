@@ -8,14 +8,17 @@ import Quickshell
 import Quickshell.Widgets
 import Quickshell.Io
 
-Item {
+Rectangle {
     id: root
 
     required property real containerWidth
 
-    // Inherit the width passed down from shell.qml seamlessly
-    width: parent ? parent.width : 220
-    height: mainColumn.height
+    height: Math.floor(0.500 * rootWindow.mywidth + 15)
+    //height: mainColumn.height + 8
+    radius: rootWindow.widgetRadius
+    color: rootWindow.widgetBGcolor
+    border.color: rootWindow.widgetBorderColor
+    border.width: 2
 
     // --- Dynamic Time & Performance States ---
     property var currentTime: new Date()
@@ -27,7 +30,7 @@ Item {
     // ==================================================================
     Column {
         id: mainColumn
-        width: parent.width
+        width: root.containerWidth
         spacing: 2
         anchors.horizontalCenter: parent.horizontalCenter
 
@@ -53,7 +56,7 @@ Item {
             HoverHandler {
                 id: textHover
             }
-            
+
             Tooltip {
                 id: clockTooltip
                 target: targetText
@@ -75,11 +78,11 @@ Item {
         // ------------------------------------------------------
         Rectangle {
             id: container
-            width: root.containerWidth - 10
+            width: rootWindow.mywidth - 40
             height: 2
             color: "black"
             anchors.horizontalCenter: parent.horizontalCenter
-    
+
             Rectangle {
                 anchors.left: parent.left
                 anchors.top: parent.top
@@ -119,7 +122,7 @@ Item {
         // -------------------------------------------------
         Rectangle {
             id: dateBar
-            width: root.containerWidth - 30
+            width: rootWindow.mywidth - 60
             height: 1
             anchors.horizontalCenter: parent.horizontalCenter
             color: "#00FF77"
@@ -153,7 +156,7 @@ Item {
         running: true
         repeat: true
         triggeredOnStart: true
-       
+
         onTriggered: {
             // 1. Kick the core clock pulse binding chain
             root.currentTime = new Date();
@@ -168,11 +171,11 @@ Item {
                     let days = Math.floor(uptimeSeconds / 86400);
                     let hours = Math.floor((uptimeSeconds % 86400) / 3600);
                     let minutes = Math.floor((uptimeSeconds % 3600) / 60);
-                
+
                     let uptimeStr = "";
                     if (days > 0) uptimeStr += `${days}d `;
                     uptimeStr += `${hours}h ${minutes}m`;
-                
+
                     root.uptimeText = "Uptime: " + uptimeStr;
                 }
             }

@@ -4,10 +4,11 @@
 //
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 
-Item {
+Rectangle {
     id: root
 
     // ==================================================================
@@ -17,10 +18,12 @@ Item {
     required property string mountPoint
     required property string mountDev
     required property string modelSize
-    
-    // Core Sizing Rule: Ensure the root object bounds trace the Column children perfectly
-    width: containerWidth
-    height: mainColumn.height
+
+    height: mainColumn.height + 8
+    radius: rootWindow.widgetRadius
+    color: rootWindow.widgetBGcolor
+    border.color: rootWindow.widgetBorderColor
+    border.width: 2
 
     // Dynamic Sizing Metrics
     property int historyLimit: containerWidth - 2
@@ -28,7 +31,7 @@ Item {
     property string devicePath: ""            // Will become "/dev/nvme1n1p3" dynamically
     property string deviceName: ""            // Will become "nvme1n1p3" dynamically
     property string ssdModel: ""              // Will become "SSD Model number" dynamically
-    
+
     // --- Output Performance & Graph Metrics ---
     readonly property real diskReadBytesSec: _diskReadBytesSec
     readonly property real diskWriteBytesSec: _diskWriteBytesSec
@@ -50,8 +53,8 @@ Item {
 
     // Helper formatting function to convert Bytes/sec to readable metrics (KB/s, MB/s)
     function formatSpeed(bytes) {
-        if (bytes >= 1024 * 1024 * 1024) return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB/s"
-        if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB/s"
+        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + " GB/s"
+        if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + " MB/s"
         if (bytes >= 1024) return (bytes / 1024).toFixed(1) + " KB/s"
         return bytes.toFixed(0) + " B/s"
     }
@@ -70,35 +73,45 @@ Item {
             id: diskHeader
             width: parent.width
             height: 18
-//            anchors.top: parent.top
-            anchors.topMargin: 1
             anchors.horizontalCenter: parent.horizontalCenter
 
             Text {
+                id: diskMainLabel
                 anchors.left: parent.left
                 color: "white"
                 font.pixelSize: 14
                 text: modelSize
+
+                HoverHandler {
+                    id: textHover2
+                }
+                Tooltip {
+                    id: ssdModTooltip
+                    target: diskMainLabel
+                    show: textHover2.hovered
+                    text: root.ssdModel
+                    fontPixelSize: 14
+                }
             }
             Text {
+                id: diskMountLabel
                 anchors.right: parent.right
-                anchors.bottom: parent.bottom // Aligns base fonts cleanly
-                anchors.bottomMargin: 2
+                anchors.baseline: diskMainLabel.baseline
+                anchors.baselineOffset: 0
                 color: "white"
                 font.pixelSize: 10
                 text: "(" + root.mountPoint + ")" 
-            }
 
-            HoverHandler {
-                id: textHover2
-            }
-
-            Tooltip {
-                id: ssdModTooltip
-                target: diskHeader
-                show: textHover2.hovered
-                text: root.ssdModel
-                fontPixelSize: 14
+                HoverHandler {
+                    id: textHover3
+                }
+                Tooltip {
+                    id: ssdDevTooltip
+                    target: diskMountLabel
+                    show: textHover3.hovered
+                    text: root.deviceName
+                    fontPixelSize: 14
+                }
             }
         }
 
@@ -107,20 +120,16 @@ Item {
         // -------------------------------------------
         Item {
             width: parent.width
-            height: 14 // Tight structural boundary
+            height: 16 // Tight structural boundary
 
             Text {
                 anchors.left: parent.left
-                anchors.top: diskHeader.bottom
-                anchors.topMargin: -2 // Shifts read text slightly upwards
                 color: "#00BBFF" // Bluish tone
                 font.pixelSize: 12
                 text: "Read: " + root.formatSpeed(root.diskReadBytesSec)
             }
             Text {
                 anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.topMargin: -2
                 color: "#00BBFF" // Bluish tone
                 font.pixelSize: 12
                 text: "(Max: " + root.formatSpeed(root.diskReadMax) + ")"
@@ -128,7 +137,7 @@ Item {
         }
 
         // -------------------------------------------
-        // --- 2. Read Graph (Normal Upward)
+        // --- Read Graph (Normal Upward)
         // -------------------------------------------
         Rectangle {
             id: readGraphBox
@@ -137,35 +146,57 @@ Item {
             color: "#66000000"
             border.color: "#AA000000"
             border.width: 1
-            
+
             // Shifted upper graph up 1px by applying a small negative top margin
-            anchors.topMargin: -1 
+            anchors.topMargin: -1
 
             Canvas {
                 id: readCanvas
                 anchors.fill: parent
                 anchors.margins: 1
-                Connections { target: root; function onHistoryReadChanged() { readCanvas.requestPaint() } }
+
+                Connections { 
+                    target: root
+                    function onHistoryReadChanged() { readCanvas.requestPaint() } 
+                }
 
                 onPaint: {
                     let ctx = getContext("2d")
                     ctx.reset()
-                    if (root.historyRead.length < 2) return
+
+                    // PERFORMANCE: Cache properties to prevent C++/JS cross-boundary overhead
+                    let data = root.historyRead
+                    let len = data.length
+                    let maxVal = root.diskReadMax
+                    let limit = root.historyLimit
+
+                    // ROBUSTNESS: Prevent crashes, NaN layout bugs, and division-by-zero
+                    if (len < 2 || maxVal <= 0 || limit <= 1) return
 
                     ctx.fillStyle = "#00BBFF"
                     ctx.strokeStyle = "#00BBFF"
                     ctx.lineWidth = 1
                     ctx.beginPath()
+
+                    // Baseline for Normal Upward graph is Y = height (bottom)
                     ctx.moveTo(width, height)
 
-                    let step = width / (root.historyLimit - 1)
-                    for (let i = 0; i < root.historyRead.length; i++) {
-                        let idx = root.historyRead.length - 1 - i
+                    let step = width / (limit - 1)
+
+                    for (let i = 0; i < len; i++) {
+                        let idx = len - 1 - i
                         let x = width - (i * step)
-                        let y = height - ((root.historyRead[idx] / root.diskReadMax) * height)
+
+                        // Normal Upward Math: 
+                        // 0 value results in y = height (physical bottom)
+                        // max value results in y = 0 (physical top)
+                        let y = height - ((data[idx] / maxVal) * height)
+
                         ctx.lineTo(x, y)
                     }
-                    let lastX = width - ((root.historyRead.length - 1) * step)
+
+                    // Close the path clean along the bottom baseline (Y = height)
+                    let lastX = width - ((len - 1) * step)
                     ctx.lineTo(lastX, height)
                     ctx.closePath()
 
@@ -173,15 +204,13 @@ Item {
                     ctx.stroke()
                 }
             }
-
         }
-
         // -------------------------------------------
         // --- 3. Space Used Horizontal Bar (Orange)
         // -------------------------------------------
         Item {
             width: parent.width
-            height: 12 // Increased container bounds slightly to pad layout transitions
+            height: 10 // Increased container bounds slightly to pad layout transitions
 
             // Background Track Bar
             Rectangle {
@@ -198,15 +227,14 @@ Item {
                     anchors.left: parent.left
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
-                    anchors.margins: 1
                     width: Math.max(0, (parent.width - 2) * (root.diskPercentUsed / 100))
                     color: "orange"
                 }
- 
+
                 HoverHandler {
                     id: textHover
                 }
-                
+
                 Tooltip {
                     id: cpuTooltip 
                     target: barTrack
@@ -218,7 +246,7 @@ Item {
         }
 
         // -------------------------------------------
-        // --- 4. Write Graph (Flipped Vertically, 0 at Top)
+        // --- Write Graph (Flipped Vertically, 0 at Top)
         // -------------------------------------------
         Rectangle {
             width: parent.width
@@ -231,35 +259,51 @@ Item {
                 id: writeCanvas
                 anchors.fill: parent
                 anchors.margins: 1
-                
-                transform: [
-                    Scale { yScale: -1 },
-                    Translate { y: writeCanvas.height }
-                ]
 
-                Connections { target: root; function onHistoryWriteChanged() { writeCanvas.requestPaint() } }
+                Connections { 
+                    target: root 
+                    function onHistoryWriteChanged() { writeCanvas.requestPaint() } 
+                }
 
                 onPaint: {
                     let ctx = getContext("2d")
                     ctx.reset()
-                    if (root.historyWrite.length < 2) return
+
+                    // PERFORMANCE & ROBUSTNESS: Cache properties locally
+                    let data = root.historyWrite
+                    let len = data.length
+                    let maxVal = root.diskWriteMax
+                    let limit = root.historyLimit
+
+                    if (len < 2 || maxVal <= 0 || limit <= 1) return
 
                     ctx.fillStyle = "#ff3333"
                     ctx.strokeStyle = "#ff3333"
                     ctx.lineWidth = 1
                     ctx.beginPath()
-                    ctx.moveTo(width, height)
 
-                    let step = width / (root.historyLimit - 1)
-                    for (let i = 0; i < root.historyWrite.length; i++) {
-                        let idx = root.historyWrite.length - 1 - i
+                    // 0 is at the top, so our fill baseline is Y = 0
+                    ctx.moveTo(width, 0)
+
+                    let step = width / (limit - 1)
+
+                    for (let i = 0; i < len; i++) {
+                        let idx = len - 1 - i
                         let x = width - (i * step)
-                        let y = height - ((root.historyWrite[idx] / root.diskWriteMax) * height)
+
+                        // EFFICIENT MATH FLIP: 
+                        // 0 value results in y = 0 (physical top)
+                        // max value results in y = height (physical bottom)
+                        let y = (data[idx] / maxVal) * height
+
                         ctx.lineTo(x, y)
                     }
-                    let lastX = width - ((root.historyWrite.length - 1) * step)
-                    ctx.lineTo(lastX, height)
+
+                    // Close the path clean along the top baseline (Y = 0)
+                    let lastX = width - ((len - 1) * step)
+                    ctx.lineTo(lastX, 0)
                     ctx.closePath()
+
                     ctx.fill()
                     ctx.stroke()
                 }
@@ -270,21 +314,19 @@ Item {
         // --- 5. Write Metrics Text Layout (Left & Right alignment)
         // -------------------------------------------
         Item {
-            width: parent.width // Standardized to fill layout cleanly
-            height: 14
+            width: parent.width 
+            height: 10
 
             Text {
                 anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.topMargin: -2 // Replaced hardcoded 'y: -2' with top margin anchors
+                y: -2
                 color: "#FF3333" // Reddish tone
                 font.pixelSize: 12
                 text: "Write: " + root.formatSpeed(root.diskWriteBytesSec)
             }
             Text {
                 anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.topMargin: -2
+                y: -2
                 color: "#FF3333" // Reddish tone
                 font.pixelSize: 12
                 text: "(Max: " + root.formatSpeed(root.diskWriteMax) + ")"
@@ -295,32 +337,31 @@ Item {
     // ==================================================================
     //  Data Gathering & Shell Resolution Systems
     // ==================================================================
+
+    // Takes the mountName and sets the drive model into ssdModel.
+    // Fires only once at start.
     FileView {
         id: modelFile
-        property string clean: deviceName.replace(/^\/dev\//, "")
-        
-        // Logic:
-        // 1. If NVMe: Remove 'n' + digits + optional 'p' + digits. Keep 'nvmeX'.
-        // 2. If SD: Remove trailing digits. Keep 'sdX'.
+
+        property string clean: deviceName ? deviceName.replace(/^\/dev\//, "") : ""
+
         property string base: {
-            if (clean.startsWith("nvme"))
-                return clean.replace(/n\d+(p\d+)?$/, ""); // Handles nvme0n1 AND nvme0n1p3
-            else if (clean.startsWith("sd"))
-                return clean.replace(/\d+$/, ""); // Handles sdd1 -> sdd
-            return "";
+            if (!clean) return "";
+
+            // Structural verification constraints using high-efficiency test calls
+            if (/p\d+$/.test(clean))          return clean.replace(/p\d+$/, "");
+            if (/^nvme\d+n\d+$/.test(clean))  return clean;
+            if (/^mmcblk\d+$/.test(clean))    return clean;
+
+            return clean.replace(/\d+$/, "");
         }
 
-        path: {
-            if (!base) return "";
-            if (base.startsWith("nvme"))
-                return `/sys/class/nvme/${base}/model`;
-            else
-                return `/sys/class/block/${base}/device/model`;
-        }
+        path: base ? `/sys/block/${base}/device/model` : ""
+        blockLoading: false
 
-        blockLoading: true
         onLoaded: {
-            root.ssdModel = text().trim();
+            let model = text().trim();
+            root.ssdModel = model.length > 0 ? model : "Unknown";
         }
     }
 
@@ -329,68 +370,62 @@ Item {
         path: "/proc/diskstats"
     }
 
-    // Resolves real storage target block partition dynamically via mount path point string
+    // Takes the mountPoint and sets the drive device name into deviceName.
+    // Fires only once at start.
     Process {
         id: deviceResolver
-        command: ["df", root.mountPoint, "--output=source"]
+        command: ["df", "--output=source", root.mountPoint]
         running: true 
 
-        stdout: SplitParser {
-            onRead: data => {
-                let cleanPath = data ? data.trim() : ""
-                if (cleanPath.length > 0 && cleanPath !== "Filesystem") {
-                    root.devicePath = cleanPath
-                    root.deviceName = root.mountDev || cleanPath.split("/").pop()
-                    
-                    // Trigger immediate capacity parsing execution loop pass
-                    spaceLookup.running = true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let lines = this.text.trim().split("\n");
+                if (lines.length >= 2) {
+                    let cleanPath = lines[lines.length - 1].trim();
+                    root.devicePath = cleanPath;
+                    root.deviceName = root.mountDev || cleanPath.split("/").pop();
+
+                    // NOW trigger the next process safely
+                    spaceLookup.running = true;
                 }
             }
         }
     }
 
-    // Parses active filesystem payload occupancy percentage strings
+    // Takes the mount point and finds and sets diskPercentUsed.
+    // This should fire once every 5 seconds.
     Process {
-       id: spaceLookup
-       command: ["df", root.devicePath]
-       running: false // Managed manually by initializer trigger and periodic timers
+        id: spaceLookup
+        command: ["df", "--output=pcent", root.devicePath]
+        running: false 
 
-       stdout: SplitParser {
-           onRead: data => {
-              let cleanText = data ? data.trim() : ""
-              
-              // Filter out kernel tracking line labels
-              if (cleanText.length > 0 && !cleanText.startsWith("Filesystem")) {
-                  let parts = cleanText.split(/\s+/)
-                  
-                  // Extract raw usage integer from Column 5 (Index 4)
-                  if (parts.length >= 5) {
-                      let percentStr = parts[4].replace("%", "")
-                      let value = parseInt(percentStr)
-                      
-                      if (!isNaN(value)) {
-                          root._diskPercentUsed = value
-                      }
-                  }
-              }
-           }
-       }
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let lines = this.text.trim().split("\n");
+                if (lines.length >= 2) {
+                    let dataLine = lines[lines.length - 1].trim();
+                    let value = parseInt(dataLine.replace("%", ""), 10);
+
+                    if (!isNaN(value)) {
+                        root._diskPercentUsed = value;
+                    }
+                }
+            }
+        }
     }
 
     // ==================================================================
     // Recurring capacity polling timer engine loop
     // ==================================================================
     Timer {
-       id: diskUsedTimer
-       interval: 5000 // 5 seconds matches your tracking preferences perfectly
-       running: true
-       repeat: true
-       onTriggered: {
-          // Guard rule skips invocation updates if node name strings are unset
-          if (root.devicePath !== "") {
-              spaceLookup.running = true
-          }
-       }
+        id: diskUsedTimer
+        interval: 5000     // 5 seconds
+        repeat: true
+        running: root.devicePath !== ""
+
+        onTriggered: {
+            spaceLookup.running = true
+        }
     }
 
     // Core high performance block I/O statistics calculator counter
@@ -402,60 +437,73 @@ Item {
 
         onTriggered: {
             diskStatsFile.reload()
-            let rawData = (typeof diskStatsFile.text === "function") ? diskStatsFile.text() : diskStatsFile.text
-            if (!rawData) return
+
+            let rawData = diskStatsFile.text().trim();
+            if (!rawData) return;
 
             let lines = rawData.split("\n")
             let currentReadSectors = 0
             let currentWriteSectors = 0
             let targetDev = root.deviceName
+            let found = false;
 
-            // Parse diskstats token sequences via index allocations
             for (let i = 0; i < lines.length; i++) {
                 let line = lines[i].trim()
                 if (line === "") continue
-                
+
+                if (line.indexOf(targetDev) === -1) continue;
+
                 let tokens = line.split(/\s+/)
                 if (tokens.length >= 10 && tokens[2] === targetDev) {
-                    currentReadSectors = parseInt(tokens[5]) || 0    // Index 5 matches standard block reads
-                    currentWriteSectors = parseInt(tokens[9]) || 0   // Index 9 matches standard block writes
-                    break
+                    currentReadSectors = parseInt(tokens[5], 10) || 0;
+                    currentWriteSectors = parseInt(tokens[9], 10) || 0;
+                    found = true;
+                    break;
                 }
             }
+            if (!found) return; 
 
             let state = root._diskState
             if (!state.initialized) {
-                if (currentReadSectors > 0 || currentWriteSectors > 0) {
-                    state.lastSectorsRead = currentReadSectors
-                    state.lastSectorsWritten = currentWriteSectors
-                    state.initialized = true
-                    root._diskState = state
-                }
-                return
+                state.lastSectorsRead = currentReadSectors;
+                state.lastSectorsWritten = currentWriteSectors;
+                state.initialized = true;
+                root._diskState = state;
+                return;
             }
-            
-            let deltaReadSectors = currentReadSectors - state.lastSectorsRead
-            let deltaWriteSectors = currentWriteSectors - state.lastSectorsWritten
-            if (deltaReadSectors < 0) deltaReadSectors = 0
-            if (deltaWriteSectors < 0) deltaWriteSectors = 0
 
-            // Linux sector sizes inside /proc/diskstats are universally fixed at 512 Bytes
-            root._diskReadBytesSec = deltaReadSectors * 512
-            root._diskWriteBytesSec = deltaWriteSectors * 512
-            
-            let rHist = [...root.historyRead]
-            let wHist = [...root.historyWrite]
-            rHist.push(root._diskReadBytesSec)
-            wHist.push(root._diskWriteBytesSec)
+            let deltaReadSectors = currentReadSectors - state.lastSectorsRead;
+            let deltaWriteSectors = currentWriteSectors - state.lastSectorsWritten;
+
+            if (deltaReadSectors < 0) deltaReadSectors = 0;
+            if (deltaWriteSectors < 0) deltaWriteSectors = 0;
+
+            let readBytes = deltaReadSectors * 512;
+            let writeBytes = deltaWriteSectors * 512;
+
+            root._diskReadBytesSec = readBytes;
+            root._diskWriteBytesSec = writeBytes;
+
+            let rHist = root.historyRead.slice();
+            let wHist = root.historyWrite.slice();
+
+            rHist.push(readBytes);
+            wHist.push(writeBytes);
 
             if (rHist.length > root.historyLimit) rHist.shift()
             if (wHist.length > root.historyLimit) wHist.shift()
-            root.historyRead = rHist
-            root.historyWrite = wHist
 
-            // Dynamic graph vertical canvas scaling boundary checks
-            root._diskReadMax = Math.max(...rHist, 1)
-            root._diskWriteMax = Math.max(...wHist, 1)
+            root.historyRead = rHist;
+            root.historyWrite = wHist;
+
+            // STABILITY FIX: Use safe manual loops instead of spread operator to prevent call-stack overflows
+            let maxR = 1;
+            for (let r = 0; r < rHist.length; r++) { if (rHist[r] > maxR) maxR = rHist[r]; }
+            root._diskReadMax = maxR;
+
+            let maxW = 1;
+            for (let w = 0; w < wHist.length; w++) { if (wHist[w] > maxW) maxW = wHist[w]; }
+            root._diskWriteMax = maxW;
 
             state.lastSectorsRead = currentReadSectors
             state.lastSectorsWritten = currentWriteSectors
@@ -463,4 +511,3 @@ Item {
         }
     }
 }
-

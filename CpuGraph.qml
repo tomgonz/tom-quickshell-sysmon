@@ -6,23 +6,26 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-Item {
+Rectangle {
     id: root
 
     // ==================================================================
     // 1. User Tweakable Configurations & Variables
     // ==================================================================
     required property real containerWidth
-    width: containerWidth
-    height: mainColumn.height // Trace children footprint perfectly
-
-    // for CPU temps
     required property string sensorChipName
     required property string sensorKeyName
 
+    height: mainColumn.height + 8
+    radius: rootWindow.widgetRadius
+    color: rootWindow.widgetBGcolor
+    border.color: rootWindow.widgetBorderColor
+    border.width: 2
+    property int barSpacing: 1 
+    property color barColor: "white"
+
     // This will hold the exact path discovered on startup (e.g. "/sys/class/hwmon/hwmon5/temp1_input")
     property string resolvedTempPath: ""
-
 
     // Dynamic Sizing Metrics
     property int maxHistoryPoints: Math.floor(containerWidth) - 2
@@ -36,13 +39,17 @@ Item {
     property real currentCpuUsage: 0
     property string _buf: ""
     property string cpuModel: "Loading..."
+    property var coreUsages: []
+    property var lastCoreTotal: []
+    property var lastCoreIdle: []
+
 
     // ==================================================================
     // 2. Display Data on UI Layout (Standardized Positioner)
     // ==================================================================
     Column {
         id: mainColumn
-        width: parent.width
+        width: root.containerWidth
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: 1
 
@@ -120,7 +127,7 @@ Item {
             HoverHandler {
                 id: textHover
             }
-            
+
             Tooltip {
                 id: cpuTooltip
                 target: cpuGraphRect
@@ -146,6 +153,59 @@ Item {
                 font.pixelSize: 14
             }
         }
+
+        // Spacer
+        Item {
+            width: 1
+            height: 3
+        }
+        // -----------------------------------------------
+        // Core Usage Container Vertical Bars
+        // -----------------------------------------------
+        Rectangle {
+            width: parent.width
+            height: 40
+            color: "transparent"
+
+            // Standardized Row Positioner handles bar grid spacing with 0% layout overhead
+            Row {
+                id: coreRow
+                anchors.centerIn: parent
+                height: parent.height
+                spacing: root.barSpacing
+
+                // Computes pixel-perfect uniform bar widths on the fly
+                readonly property real optimalBarWidth: {
+                    let totalCores = root.coreUsages ? root.coreUsages.length : 1;
+                    if (totalCores === 0) return 1;
+                    let totalSpacing = root.barSpacing * (totalCores - 1);
+                    return Math.max(1, Math.floor((root.containerWidth - totalSpacing) / totalCores));
+                }
+
+                Repeater {
+                    model: root.coreUsages
+                    delegate: Item {
+                        width: coreRow.optimalBarWidth
+                        height: coreRow.height
+
+                        // 1. Static Background Track
+                        Rectangle {
+                            anchors.fill: parent
+                            color: "#66000000" // Black 50% transparent background
+                        }
+
+                        // 2. Dynamic Usage Bar (Grows Upward from Bottom Boundary)
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            width: parent.width
+                            height: Math.max(0, Math.min(parent.height, parent.height * (modelData / 100.0)))
+                            color: root.barColor
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
     // ==================================================================
@@ -176,19 +236,19 @@ Item {
     // -----------------------------------------
     // Core CPU Load Statistics Reader
     FileView {
-        id: statReader
+        id: statReaderAvg
         path: "/proc/stat"
         onLoaded: {
             let content = (typeof text === "function") ? text() : text;
             if (!content) return;
             let lines = content.split("\n");
-            
+
             for (let i = 0; i < lines.length; i++) {
                 let line = lines[i].trim();
                 if (line.startsWith("cpu ")) {
                     let parts = line.split(/\s+/);
                     let aggIdle = parseInt(parts[4]) + parseInt(parts[5]);
-                    
+
                     // Sum up user, nice, system, idle, iowait, irq, softirq tokens
                     let aggTotal = 0;
                     for (let j = 1; j < 8; j++) {
@@ -199,7 +259,7 @@ Item {
                         let dTotal = aggTotal - root.lastTotal;
                         let dIdle = aggIdle - root.lastIdle;
                         let aggUsage = dTotal > 0 ? 100 * (1 - dIdle / dTotal) : 0;
-                        
+
                         let hist = [...root.cpuHistory];
                         hist.push(aggUsage);
                         if (hist.length > root.maxHistoryPoints) hist.shift();
@@ -211,6 +271,81 @@ Item {
                     break;
                 }
             }
+        }
+    }
+
+    FileView {
+        id: statReader
+        path: "/proc/stat"
+
+        onLoaded: {
+            let content = (typeof text === "function") ? text() : text;
+            if (!content) return;
+
+            let lines = content.split("\n");
+            let newCoreTotal = [];
+            let newCoreIdle = [];
+            let newCoreUsage = [];
+
+            // 1. First pass: Determine max core index safely
+            let maxIndex = -1;
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                let parts = line.split(/\s+/);
+                if (parts[0].startsWith("cpu") && parts[0].length > 3) {
+                    let coreNumStr = parts[0].substring(3);
+                    let idx = parseInt(coreNumStr);
+                    if (!isNaN(idx)) {
+                        maxIndex = Math.max(maxIndex, idx);
+                    }
+                }
+            }
+
+            if (maxIndex === -1) return; // No per-core metrics parsed
+
+            // Initialize data vectors
+            for (let i = 0; i <= maxIndex; i++) {
+                newCoreUsage.push(0);
+                newCoreTotal.push(0);
+                newCoreIdle.push(0);
+            }
+
+            // 2. Second pass: Calculate differential core delta loads
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                let parts = line.split(/\s+/);
+
+                // Matches individual lines (cpu0, cpu1, cpu12, etc.) but skips aggregate total "cpu " line
+                if (parts[0].startsWith("cpu") && parts[0].length > 3 && !isNaN(parseInt(parts[0].charAt(3)))) {
+                    let coreIndex = parseInt(parts[0].substring(3));
+                    let idle = parseInt(parts[4]) || 0; // Index 4 matches core idle state cycles
+
+                    let total = 0;
+                    for (let j = 1; j < parts.length; j++) {
+                        total += parseInt(parts[j]) || 0;
+                    }
+
+                    if (root.lastCoreTotal[coreIndex] !== undefined) {
+                        let dTotal = total - root.lastCoreTotal[coreIndex];
+                        let dIdle = idle - root.lastCoreIdle[coreIndex];
+
+                        let usage = 0;
+                        if (dTotal > 0) {
+                            //usage = 100 * (1 - (dIdle / dTotal));
+                            usage = 100 * (1 - (dIdle / dTotal));
+                        }
+                        newCoreUsage[coreIndex] = usage;
+                    }
+
+                    newCoreTotal[coreIndex] = total;
+                    newCoreIdle[coreIndex] = idle;
+                }
+            }
+
+            // Atomically update data properties to avoid layout micro-stuttering
+            root.coreUsages = newCoreUsage;
+            root.lastCoreTotal = newCoreTotal;
+            root.lastCoreIdle = newCoreIdle;
         }
     }
 
@@ -281,17 +416,17 @@ Item {
         onTriggered: {
             if (_baseDir === "") {
                 if (_hIdx < 16) {
-                   discoveryReader.path = "/sys/class/hwmon/hwmon" + _hIdx++ + "/name";
+                    discoveryReader.path = "/sys/class/hwmon/hwmon" + _hIdx++ + "/name";
                 } else {
-                   resolvedTempPath = "/dev/null";   // could not find a cpu temp path
-                   pathVarIsReady = true;
+                    resolvedTempPath = "/dev/null";   // could not find a cpu temp path
+                    pathVarIsReady = true;
                 }
             } else {
                 if (_lIdx <= 8) {
-                   discoveryReader.path = _baseDir + "/temp" + _lIdx++ + "_label";
+                    discoveryReader.path = _baseDir + "/temp" + _lIdx++ + "_label";
                 } else {
-                   resolvedTempPath = _baseDir + "/temp1_input";
-                   pathVarIsReady = true;
+                    resolvedTempPath = _baseDir + "/temp1_input";
+                    pathVarIsReady = true;
                 }
             }
         }
@@ -311,10 +446,21 @@ Item {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            statReader.reload();
+            statReaderAvg.reload();
             freqReader.reload();
-            
+
         }
     }
+
+    Timer {
+        interval: 600
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            statReader.reload();
+        }
+    }
+
 }
 

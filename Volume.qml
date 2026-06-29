@@ -7,17 +7,19 @@ import Quickshell
 import Quickshell.Services.Pipewire
 import Quickshell.Widgets
 
-Item {
+Rectangle {
     id: root
 
     // ==================================================================
     // 1. User Tweakable Configurations & Variables
     // ==================================================================
     required property real containerWidth
-    
-    // Core Sizing Rule: Ensure the root object bounds trace the Column children perfectly
-    width: containerWidth
-    height: mainColumn.height
+
+    height: mainColumn.height + 8
+    radius: rootWindow.widgetRadius
+    color: rootWindow.widgetBGcolor
+    border.color: rootWindow.widgetBorderColor
+    border.width: 2
 
     PwObjectTracker {
         objects: [ Pipewire.defaultAudioSink ]
@@ -29,8 +31,14 @@ Item {
     Column {
         id: mainColumn
         width: root.containerWidth
-        spacing: 4
+        spacing: 2
         anchors.horizontalCenter: parent.horizontalCenter
+
+        // spacer
+        Item {
+            width: 1
+            height: 1
+        }
 
         // -----------------------------------------------
         // --- 1. Volume Text Header Row Container ---
@@ -39,7 +47,6 @@ Item {
             width: parent.width
             height: 16
             // Shift down slightly to mirror your original top margin preference
-            anchors.topMargin: 2 
 
             // Left Label
             Text {
@@ -57,14 +64,14 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 font.pixelSize: 14
                 font.bold: true
-                
+
                 text: (Pipewire.defaultAudioSink?.audio.muted ?? false) ? "MUTED" : "MUTE"
                 color: (Pipewire.defaultAudioSink?.audio.muted ?? false) ? "#FF0000" : "grey"
 
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    
+
                     onClicked: {
                         if (Pipewire.defaultAudioSink?.audio) {
                             let isMuted = Pipewire.defaultAudioSink.audio.muted;
@@ -82,6 +89,12 @@ Item {
                 font.pixelSize: 14
                 text: Math.floor((Pipewire.defaultAudioSink?.audio.volume ?? 0) * 100) + "%"
             }
+        }
+
+        // spacer
+        Item {
+            width: 1
+            height: 1
         }
 
         // -----------------------------------------------
@@ -111,7 +124,7 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 hoverEnabled: true 
-                
+
                 // Volume Slider Wheel Scroll Handler
                 onWheel: wheel => {
                     const step = 0.05; 
@@ -130,7 +143,7 @@ Item {
                         Pipewire.defaultAudioSink.audio.volume = Math.max(0.0, Math.min(1.0, newVol));
                     }
                 }
-                
+
                 // Volume Slider Active Click Drag Handler
                 onPositionChanged: mouse => {
                     if (mouse.pressed && Pipewire.defaultAudioSink?.audio) {
