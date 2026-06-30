@@ -57,6 +57,8 @@ Rectangle {
         id: mainColumn
         width: root.containerWidth
         anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.topMargin: 3
         spacing: 1
 
         // ------------------------------
