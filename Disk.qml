@@ -112,6 +112,18 @@ Rectangle {
                     text: root.deviceName
                     fontPixelSize: 14
                 }
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor // Changes cursor to a hand icon on hover
+
+                    // Fires a background system call instantly when clicked
+                    onClicked: {
+                        if (root.mountPoint && root.mountPoint !== "") {
+                            fmLauncher.command = ["xdg-open", root.mountPoint];
+                            fmLauncher.running = true;
+                        }
+                    }
+                }
             }
         }
 
@@ -363,6 +375,11 @@ Rectangle {
             let model = text().trim();
             root.ssdModel = model.length > 0 ? model : "Unknown";
         }
+    }
+
+    // High performance background execution channel for launching your local file manager
+    Process {
+        id: fmLauncher
     }
 
     FileView {
