@@ -440,7 +440,7 @@ Rectangle {
         id: luks2dmResolver
         running: false // Sits dormant until Process 1 turns it on
 
-        // use enctryped luks device and find intermidiate dev
+        // use enctryped luks device and find intermediate dev
         command: ["readlink", "-f", root.luksPath]
 
         stdout: StdioCollector {
