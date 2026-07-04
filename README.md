@@ -17,7 +17,7 @@ A highly optimized, System Monitor Panel of widgets, Clock, Cpu, Memory, Network
 ## Tooltips
 
 - **Timezone** hover over Time in main clock widget.
-- **CPU Model** hover over the CPU graph.
+- **CPOU Model** hover over the CPU graph.
 - **Disk Model** hover over the Disk label you set for modelSize in shell.qml.
 - **Disk Device** hover over the mountPoint on the Disk widget.
 - **Disk Usage Percent** hover over the orange usage bar.
@@ -109,9 +109,9 @@ To swap out, add, or customize your storage monitoring components, look at the D
 5. Set your true system mount path string to monitor (`mountPoint: "/home"`). This is used for partition space used, and will lookup the device to get IO stats.
 6.  Ensure any new disk widget `id` is in the masking table structure (`mask: Region { ... }`) to enable correct backdrop window transparency clip-outs and Tooltips work correctly.
 
-## Tips when using enctryped drives
+## Tips when using encrypted drives
 
-It should resolve encrypted drives to the correct physical device automatically, to be used with the disk IOi and disk Model lookup.  But if the Disk IO status does not work, and the disk model Tooltip does not work, in the disk section of the shell.qml, you set the mountPoint, and also set the mountDev to the real disk device with partition, like sda3 or nvme0n1p2, so it can find the IO stats and device model for the Tooltip.
+It should resolve encrypted drives to the correct physical device automatically, to be used with the disk IO and disk Model lookup.  But if the Disk IO status does not work, and the disk model Tooltip does not work, in the disk section of the shell.qml, you set the mountPoint, and also set the mountDev to the real disk device with partition, like sda3 or nvme0n1p2, so it can find the IO stats and device model for the Tooltip.
 
 ## Tips when using in Toolbox
 
