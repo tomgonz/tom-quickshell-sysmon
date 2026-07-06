@@ -253,7 +253,7 @@ Rectangle {
             uptimeFile.reload();
             let rawData = uptimeFile.text().trim();
             if (rawData) {
-                let uptimeSeconds = parseInt(rawData.split(' '), 10);
+                let uptimeSeconds = parseInt(rawData.split(/\s+/)[0], 10);
                 if (!isNaN(uptimeSeconds)) {
                     let days = Math.floor(uptimeSeconds / 86400);
                     let hours = Math.floor((uptimeSeconds % 86400) / 3600);
