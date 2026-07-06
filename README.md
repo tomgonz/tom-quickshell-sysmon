@@ -17,7 +17,7 @@ A highly optimized, System Monitor Panel of widgets, Clock, Cpu, Memory, Network
 ## Tooltips
 
 - **Timezone** hover over Time in main clock widget.
-- **CPOU Model** hover over the CPU graph.
+- **CPU Model** hover over the CPU graph.
 - **Disk Model** hover over the Disk label you set for modelSize in shell.qml.
 - **Disk Device** hover over the mountPoint on the Disk widget.
 - **Disk Usage Percent** hover over the orange usage bar.
@@ -26,7 +26,7 @@ A highly optimized, System Monitor Panel of widgets, Clock, Cpu, Memory, Network
 
 - **24hr Time** double click on the Time and it will toggle between AM/PM to 24hr clock.
 - **open Calendar** click on the Date to open a Month calendar at timeanddate.com
-- **open Filemanager** click on the mountPoint and it opens a File manager to that location.
+- **open File manager** click on the mountPoint and it opens a File manager to that location.
 - **Audio Mute** click on MUTE in Volume to toggle Mute.
 
 ## Features
@@ -102,7 +102,7 @@ All primary environment configurations are managed right at the top of `shell.qm
 
 To swap out, add, or customize your storage monitoring components, look at the Disk { ...} sections in the second half of `shell.qml`. Each disk panel consists of a Disk { ... } widget box.
 
-1. To remove a Disk widget, remove the Disk { ... } section or commend it out with // or /* */.
+1. To remove a Disk widget, remove the Disk { ... } section or comment it out with // or /* */.
 2. To add another Disk widget, copy and paste a new Disk { ... } widget section in the shell.qml file.
 3. Update the unique container id when you have more than one disk widget (`id: diskWidgetX`).
 4. Add your custom visual descriptive drive label string (`modelSize: "Drive Model Type"`) or whatever you like.  It's up to you, but don't make it too long.  It will be displayed on the Disk widget.
@@ -111,7 +111,7 @@ To swap out, add, or customize your storage monitoring components, look at the D
 
 ## Tips when using encrypted drives
 
-It should resolve encrypted drives to the correct physical device automatically, to be used with the disk IO and disk Model lookup.  But if the Disk IO status does not work, and the disk model Tooltip does not work, in the disk section of the shell.qml, you set the mountPoint, and also set the mountDev to the real disk device with partition, like sda3 or nvme0n1p2, so it can find the IO stats and device model for the Tooltip.
+It should resolve encrypted drives to the correct physical device automatically, to be used with the disk IOi and disk Model lookup.  But if the Disk IO status does not work, and the disk model Tooltip does not work, in the disk section of the shell.qml, you set the mountPoint, and also set the mountDev to the real disk device with partition, like sda3 or nvme0n1p2, so it can find the IO stats and device model for the Tooltip.
 
 ## Tips when using in Toolbox
 
