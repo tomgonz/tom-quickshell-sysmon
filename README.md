@@ -47,7 +47,7 @@ A highly optimized, System Monitor Panel of widgets, Clock, Cpu, Memory, Network
    ```bash
    mkdir -p ~/.config/quickshell
    cd ~/.config/quickshell
-   git clone https://github.com/tomgonz/tom-quickshell-sysmon  .
+   git clone https://github.com/tomgonz/quickshell-simpleperfmeters  .
    ```
 3. Edit configuration variables in the shell.qml file to suit your needs.  netDev, cpuTempSensors..., etc...
 
